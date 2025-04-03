@@ -12,11 +12,11 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp }) => {
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic validation
     if (!userData.name || !userData.email || !userData.password || !userData.confirmPassword) {
       setError('Please fill in all fields');
       return;
@@ -37,9 +37,34 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp }) => {
       return;
     }
 
-    // If all validation passes, create the account
+    setLoading(true);
     setError('');
-    onSignUp();
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Sign up failed');
+      }
+
+      onSignUp();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -107,8 +132,9 @@ const SignUp: React.FC<SignUpProps> = ({ onSignUp }) => {
           <button
             type="submit"
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            disabled={loading}
           >
-            Create Account
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
       </div>
